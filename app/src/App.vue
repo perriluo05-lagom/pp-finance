@@ -12,6 +12,7 @@ const navs = [
   { path: '/portfolio', label: '持仓' },
   { path: '/scenario', label: '剧本' },
   { path: '/learn', label: '学习' },
+  { path: '/graduation', label: '毕业' },
 ]
 
 const fmt = (v) => v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })

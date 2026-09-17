@@ -8,7 +8,7 @@ const portfolio = usePortfolioStore()
 
 // ---- 剧本状态（localStorage）----
 const SS_KEY = 'sim-scenario-state'
-const state = ref(JSON.parse(localStorage.getItem(SS_KEY) ?? 'null') || { activeId: null, day: 0, done: {} })
+const state = ref(JSON.parse(localStorage.getItem(SS_KEY) ?? 'null') || { activeId: null, day: 0, done: {}, valueHistory: {} })
 const save = () => localStorage.setItem(SS_KEY, JSON.stringify(state.value))
 
 const active = computed(() => state.value.activeId ? byScenarioId(state.value.activeId) : null)
@@ -52,6 +52,11 @@ const advanceOne = () => {
   state.value.day += 1
   showEvent.value = true
   portfolio.advanceDay(dayReturns.value)
+  // 记录每天的总资产（用于复盘对比图）
+  if (!state.value.valueHistory[active.value.id]) {
+    state.value.valueHistory[active.value.id] = []
+  }
+  state.value.valueHistory[active.value.id].push(portfolio.totalValue)
   save()
 }
 const autoPlay = ref(null)
@@ -93,6 +98,102 @@ function renderChart() {
         { offset: 0, color: 'rgba(74,58,92,.15)' }, { offset: 1, color: 'rgba(0,0,0,0)' }] } } }],
   })
 }
+
+// 复盘对比图（你的操作 vs 持有不动）
+const reviewChartEl = ref(null)
+let reviewChart = null
+const renderReviewChart = () => {
+  if (!reviewChartEl.value || !active.value) return
+  reviewChart ??= echarts.init(reviewChartEl.value)
+  
+  const history = state.value.valueHistory[active.value.id] || []
+  if (history.length === 0) return
+  
+  // 计算"你的操作"收益曲线
+  const yourReturns = history.map(v => ((v - portfolio.initialCapital) / portfolio.initialCapital * 100).toFixed(2))
+  
+  // 计算"持有不动"收益曲线（假设一开始全仓买入沪深300）
+  const cum = series.value.cum['fund-index-01']
+  const holdReturns = cum.slice(0, history.length).map(v => (v * 100).toFixed(2))
+  
+  const days = Array.from({ length: history.length }, (_, i) => i + 1)
+  
+  reviewChart.setOption({
+    grid: { left: 50, right: 20, top: 40, bottom: 40 },
+    legend: { data: ['你的操作', '持有不动'], top: 10, textStyle: { color: '#7d6b8f' } },
+    xAxis: {
+      type: 'category',
+      data: days,
+      name: '交易日',
+      axisLabel: { color: '#948aa3', fontSize: 11 },
+      axisLine: { lineStyle: { color: '#e8e2ee' } }
+    },
+    yAxis: {
+      type: 'value',
+      name: '收益率(%)',
+      axisLabel: { color: '#948aa3', fontSize: 11, formatter: '{value}%' },
+      splitLine: { lineStyle: { color: '#f0ebf5' } }
+    },
+    tooltip: {
+      trigger: 'axis',
+      formatter: (ps) => {
+        const day = ps[0].dataIndex + 1
+        let result = `第${day}日<br/>`
+        ps.forEach(p => {
+          result += `${p.marker}${p.seriesName}: ${p.value}%<br/>`
+        })
+        return result
+      },
+      confine: true
+    },
+    series: [
+      {
+        name: '你的操作',
+        type: 'line',
+        data: yourReturns,
+        smooth: true,
+        symbol: 'none',
+        lineStyle: { color: '#7d6b8f', width: 2.5 },
+        areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [
+          { offset: 0, color: 'rgba(125,107,143,.2)' }, { offset: 1, color: 'rgba(0,0,0,0)' }] } }
+      },
+      {
+        name: '持有不动',
+        type: 'line',
+        data: holdReturns,
+        smooth: true,
+        symbol: 'none',
+        lineStyle: { color: '#8fbf8b', width: 2.5, type: 'dashed' },
+      }
+    ],
+  })
+}
+
+// 计划回收：剧本A第55日的计划
+const PLAN_KEY = 'sim-scenario-plan'
+const showPlanInput = ref(false)
+const planText = ref('')
+const savedPlan = ref(localStorage.getItem(PLAN_KEY) || '')
+
+// 检查是否需要显示计划输入（剧本A第55日）
+watch([active, activeDay], () => {
+  if (active.value?.id === 'A' && activeDay.value === 55 && !savedPlan.value) {
+    showPlanInput.value = true
+  }
+})
+
+const savePlan = () => {
+  if (planText.value.trim()) {
+    savedPlan.value = planText.value.trim()
+    localStorage.setItem(PLAN_KEY, savedPlan.value)
+    showPlanInput.value = false
+  }
+}
+
+// 检查是否需要显示计划回收（剧本B第1日）
+const showPlanRecall = computed(() => {
+  return active.value?.id === 'B' && activeDay.value === 1 && savedPlan.value
+})
 
 const fmt = (v) => v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const pct = (v) => (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%'
@@ -191,6 +292,14 @@ const periodPnl = computed(() => {
             <div class="rv"><span>沪深300同期</span><b class="num">{{ pct(series.cum['fund-index-01'][active.days]) }}</b></div>
             <div class="rv"><span>交易笔数</span><b class="num">{{ portfolio.trades.length }}</b></div>
           </div>
+          
+          <!-- 复盘对比图 -->
+          <div class="rv-chart-section">
+            <p class="rv-chart-title">你的操作 vs 持有不动</p>
+            <div ref="reviewChartEl" class="rv-chart"></div>
+            <p class="rv-chart-hint">频繁操作真的跑赢"躺平"了吗？</p>
+          </div>
+          
           <p class="rv-text">复盘要点：</p>
           <ul class="rv-list">
             <li v-for="f in active.review.focus" :key="f">{{ f }}</li>
@@ -198,6 +307,32 @@ const periodPnl = computed(() => {
           <div class="rv-btns">
             <button class="cta ghost" @click="quit">重玩这个剧本</button>
             <button class="cta" @click="finish">完成，返回剧本列表</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 计划输入弹窗（剧本A第55日） -->
+      <div v-if="showPlanInput" class="modal-mask">
+        <div class="modal card plan-modal">
+          <h3>📝 写下你的计划</h3>
+          <p class="plan-hint">如果明天开始每天跌5%，你打算什么时候卖？写下你的计划，我们稍后会检验它。</p>
+          <textarea v-model="planText" class="plan-input" placeholder="例如：如果回撤超过10%，我就减仓一半..." rows="4"></textarea>
+          <div class="plan-btns">
+            <button class="cta" @click="savePlan">保存计划</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 计划回收弹窗（剧本B第1日） -->
+      <div v-if="showPlanRecall" class="modal-mask">
+        <div class="modal card recall-modal">
+          <h3>🔍 还记得你的计划吗？</h3>
+          <p class="recall-hint">在剧本A结束时，你写下了这个计划：</p>
+          <div class="recall-plan">{{ savedPlan }}</div>
+          <p class="recall-question">现在，暴跌开始了。你打算怎么做？</p>
+          <div class="recall-btns">
+            <button class="cta ghost" @click="showEvent = false">按计划执行</button>
+            <button class="cta" @click="showEvent = false">改变主意</button>
           </div>
         </div>
       </div>
@@ -257,5 +392,24 @@ h1 { font-size: var(--text-3xl); font-weight: var(--font-bold); letter-spacing: 
 .rv-list { margin: 0 0 var(--space-6); padding-left: var(--space-6); color: var(--text-secondary); font-size: var(--text-sm); display: flex; flex-direction: column; gap: var(--space-1); }
 .rv-btns { display: flex; gap: var(--space-3); }
 .rv-btns .cta { flex: 1; }
+
+/* 复盘对比图 */
+.rv-chart-section { margin: var(--space-6) 0; }
+.rv-chart-title { font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--text-primary); margin-bottom: var(--space-3); }
+.rv-chart { width: 100%; height: 240px; margin-bottom: var(--space-2); }
+.rv-chart-hint { font-size: var(--text-xs); color: var(--text-tertiary); text-align: center; font-style: italic; }
+
+/* 计划输入弹窗 */
+.plan-modal, .recall-modal { max-width: 500px; }
+.plan-modal h3, .recall-modal h3 { font-size: var(--text-xl); font-weight: var(--font-bold); margin-bottom: var(--space-4); }
+.plan-hint, .recall-hint { font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-4); line-height: var(--leading-relaxed); }
+.plan-input { width: 100%; padding: var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-md); font-size: var(--text-sm); font-family: var(--font-sans); resize: vertical; margin-bottom: var(--space-4); }
+.plan-input:focus { outline: none; border-color: var(--primary); }
+.plan-btns, .recall-btns { display: flex; gap: var(--space-3); justify-content: flex-end; }
+
+/* 计划回收 */
+.recall-plan { background: var(--bg-subtle); padding: var(--space-4); border-radius: var(--radius-md); font-size: var(--text-sm); color: var(--text-primary); margin: var(--space-4) 0; line-height: var(--leading-relaxed); border-left: 3px solid var(--primary); }
+.recall-question { font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--text-primary); margin-bottom: var(--space-4); }
+
 @media (max-width: 900px) { .play-grid { grid-template-columns: 1fr; } }
 </style>
