@@ -8,7 +8,7 @@ const portfolio = usePortfolioStore()
 const LS_KEY = 'sim-learn-v1'
 const loadLS = () => { try { return JSON.parse(localStorage.getItem(LS_KEY)) } catch { return null } }
 const saved = loadLS() ?? { selfTest: null, quizDone: false, done: {} }
-const persistLS = () => localStorage.setItem(LS_KEY, JSON.stringify({ selfTest: selfTestDone.value ? 1 : null, quizDone: quizDone.value, done: {} }))
+const persistLS = () => localStorage.setItem(LS_KEY, JSON.stringify({ selfTest: selfTestDone.value ? selfTest.value : null, quizDone: quizDone.value, quizAnswers: quizAnswers.value, done: {} }))
 
 // ---- 阶段0 自测 ----
 const selfTest = ref(saved.selfTest ?? { savings: null, monthly: null, horizon: null })
@@ -33,7 +33,7 @@ const horizonAdvice = computed(() => {
 
 // ---- 阶段3 风险测评 ----
 const showQuiz = ref(false)
-const quizAnswers = ref(Array(10).fill(null))
+const quizAnswers = ref(saved.quizAnswers ?? Array(10).fill(null))
 const quizDone = ref(saved.quizDone ?? false)
 const quiz = [
   { q: '你的年龄？', opts: ['18-24', '25-30', '30以上'], scores: [3, 2, 1] },
@@ -65,43 +65,48 @@ const honestyGap = computed(() => {
 const submitQuiz = () => { quizDone.value = true; persistLS() }
 
 // ---- 阶段定义 ----
-const stages = computed(() => [
-  {
-    id: 0, name: '认识钱', status: selfTestDone.value ? 'done' : 'current',
-    desc: '三道自测题，建立「只用闲钱投资」的底线认知',
-    tasks: ['完成三道财务自测', '看懂三张铁律卡'],
-  },
-  {
-    id: 1, name: '搞定活钱', status: 'locked',
-    desc: '第一笔投资：买入货币基金，理解活钱管理',
-    tasks: ['买入1000元稳健货币A', '次日查看收益到账', '回答小测：生活费放哪'],
-  },
-  {
-    id: 2, name: '认识波动', status: 'locked',
-    desc: '买入纯债基金，亲历第一次账面浮亏与修复',
-    tasks: ['买入2000元纯债一号', '经历回撤日提示', '持有到回撤修复'],
-  },
-  {
-    id: 3, name: '摸清自己', status: quizDone.value ? 'done' : 'locked',
-    desc: '10道风险测评题，产出你的投资者画像',
-    tasks: ['完成10道测评题', '查看推荐配置', '观察言行一致性彩蛋'],
-  },
-  {
-    id: 4, name: '第一次组合', status: 'locked',
-    desc: '按画像配置组合，快进3个月，完成第一次复盘',
-    tasks: ['买入推荐组合或自选比例', '通关剧本A「牛市的味道」', '完成剧本复盘'],
-  },
-  {
-    id: 5, name: '直面波动', status: 'locked',
-    desc: '股灾、横盘、疫情三连剧本，验证真实的风险承受力',
-    tasks: ['通关剧本B/C/D', '三份画像验证报告', '必要时主动调低画像'],
-  },
-  {
-    id: 6, name: '进入真实市场', status: 'locked',
-    desc: '开户指南、渠道选择、第一笔真实买入清单',
-    tasks: ['通关剧本E「毕业大考」', '四项行为标准达成', '领取毕业证书'],
-  },
-])
+const stages = computed(() => {
+  const s0Done = selfTestDone.value
+  const s3Done = quizDone.value
+  
+  return [
+    {
+      id: 0, name: '认识钱', status: s0Done ? 'done' : 'current',
+      desc: '三道自测题，建立「只用闲钱投资」的底线认知',
+      tasks: ['完成三道财务自测', '看懂三张铁律卡'],
+    },
+    {
+      id: 1, name: '搞定活钱', status: s0Done ? 'current' : 'locked',
+      desc: '第一笔投资：买入货币基金，理解活钱管理',
+      tasks: ['买入1000元稳健货币A', '次日查看收益到账', '回答小测：生活费放哪'],
+    },
+    {
+      id: 2, name: '认识波动', status: s0Done ? 'current' : 'locked',
+      desc: '买入纯债基金，亲历第一次账面浮亏与修复',
+      tasks: ['买入2000元纯债一号', '经历回撤日提示', '持有到回撤修复'],
+    },
+    {
+      id: 3, name: '摸清自己', status: s3Done ? 'done' : (s0Done ? 'current' : 'locked'),
+      desc: '10道风险测评题，产出你的投资者画像',
+      tasks: ['完成10道测评题', '查看推荐配置', '观察言行一致性彩蛋'],
+    },
+    {
+      id: 4, name: '第一次组合', status: s0Done ? 'current' : 'locked',
+      desc: '按画像配置组合，快进3个月，完成第一次复盘',
+      tasks: ['买入推荐组合或自选比例', '通关剧本A「牛市的味道」', '完成剧本复盘'],
+    },
+    {
+      id: 5, name: '直面波动', status: s0Done ? 'current' : 'locked',
+      desc: '股灾、横盘、疫情三连剧本，验证真实的风险承受力',
+      tasks: ['通关剧本B/C/D', '三份画像验证报告', '必要时主动调低画像'],
+    },
+    {
+      id: 6, name: '进入真实市场', status: s0Done ? 'current' : 'locked',
+      desc: '开户指南、渠道选择、第一笔真实买入清单',
+      tasks: ['通关剧本E「毕业大考」', '四项行为标准达成', '领取毕业证书'],
+    },
+  ]
+})
 const doneCount = computed(() => stages.value.filter((s) => s.status === 'done').length)
 
 const knowledgeCards = [

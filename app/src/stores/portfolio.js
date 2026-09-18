@@ -171,6 +171,13 @@ export const usePortfolioStore = defineStore('portfolio', {
     openAccount() {
       this.cash = 100000
       this.initialCapital = 100000
+      this.day = 0
+      this.trades = []
+      this.holdings = {}
+      this.nav = Object.fromEntries(ASSETS.map((a) => [a.id, 1]))
+      this.navHistory = {}
+      this.quickRedeemUsedToday = 0
+      this.currentDayReturns = null
       this.persist()
     },
 

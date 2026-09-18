@@ -11,7 +11,7 @@ let chart = null
 const fmt = (v) => v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const pct = (v) => (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%'
 
-const isFresh = computed(() => portfolio.initialCapital === 0 || (portfolio.day === 0 && !portfolio.trades.length))
+const isFresh = computed(() => portfolio.initialCapital === 0)
 
 // 总资产历史（day0=本金，之后每天总资产）
 const totalSeries = computed(() => {

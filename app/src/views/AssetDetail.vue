@@ -169,9 +169,9 @@ const advanceDay = () => {
 </template>
 
 <style scoped>
-.title { font-size: var(--text-3xl); font-weight: var(--font-bold); letter-spacing: -0.01em; }
-.risk { font-size: var(--text-sm); background: var(--warning-bg); color: var(--warning); padding: 4px 10px; border-radius: var(--radius-sm); vertical-align: middle; }
-.intro { color: var(--text-secondary); margin: var(--space-2) 0 var(--space-6); }
+.title { font-size: var(--text-3xl); font-weight: var(--font-bold); letter-spacing: -0.01em; margin-bottom: var(--space-2); }
+.risk { font-size: var(--text-sm); background: var(--warning-bg); color: var(--warning); padding: 4px 10px; border-radius: var(--radius-sm); vertical-align: middle; margin-left: var(--space-2); }
+.intro { color: var(--text-secondary); margin: 0 0 var(--space-6); line-height: var(--leading-normal); }
 .row { display: flex; gap: var(--space-4); margin-bottom: var(--space-4); flex-wrap: wrap; }
 .stage-row { display: flex; gap: var(--space-3); margin-bottom: var(--space-4); }
 .stage { flex: 1; display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-4) var(--space-5); }
@@ -183,19 +183,20 @@ const advanceDay = () => {
 .sub { color: var(--text-tertiary); font-size: var(--text-xs); }
 .placeholder { color: var(--text-tertiary); text-align: center; padding: var(--space-12); margin-bottom: var(--space-4); }
 .chart-block { margin-bottom: var(--space-4); padding: var(--space-6); }
-.chart-head { display: flex; justify-content: space-between; align-items: center; font-size: var(--text-sm); color: var(--text-secondary); padding: 0 var(--space-2) var(--space-2); }
+.chart-head { display: flex; justify-content: space-between; align-items: center; font-size: var(--text-sm); color: var(--text-secondary); padding: 0 0 var(--space-3); }
 .chart-now { font-weight: var(--font-semibold); color: var(--text-primary); }
 .nav-chart { width: 100%; height: 240px; }
-.actions { display: flex; gap: var(--space-3); margin: var(--space-6) 0; }
+.actions { display: flex; gap: var(--space-3); margin: var(--space-6) 0; align-items: center; }
 .cta { background: var(--brand-accent); color: var(--text-on-color); border: none; padding: var(--space-3) var(--space-8); border-radius: var(--radius-md); font-size: var(--text-base); font-weight: var(--font-medium); cursor: pointer; }
+.cta:hover { opacity: 0.9; }
 .cta.secondary { background: var(--bg-card); color: var(--brand-accent); border: 1px solid var(--brand-accent); }
 .day-btn { margin-left: auto; border: 1px dashed var(--border-strong); background: none; color: var(--text-tertiary); border-radius: var(--radius-md); padding: var(--space-2) var(--space-4); cursor: pointer; font-size: var(--text-sm); }
 .rules { margin-bottom: var(--space-3); color: var(--text-secondary); font-size: var(--text-sm); padding: var(--space-4) var(--space-6); }
-.rules summary { cursor: pointer; font-weight: var(--font-semibold); color: var(--text-primary); padding: var(--space-1) 0; }
-.rules ul { margin: var(--space-3) 0 var(--space-1); padding-left: var(--space-6); display: flex; flex-direction: column; gap: var(--space-1); }
-.real-ref { color: var(--text-tertiary); font-size: var(--text-sm); margin-top: var(--space-6); }
+.rules summary { cursor: pointer; font-weight: var(--font-semibold); color: var(--text-primary); padding: var(--space-2) 0; }
+.rules ul { margin: var(--space-3) 0 var(--space-2); padding-left: var(--space-6); display: flex; flex-direction: column; gap: var(--space-2); }
+.real-ref { color: var(--text-tertiary); font-size: var(--text-sm); margin-top: var(--space-8); line-height: var(--leading-normal); }
 .modal-mask { position: fixed; inset: 0; background: rgba(125, 107, 143, 0.25); display: flex; align-items: center; justify-content: center; z-index: 100; padding: var(--space-4); }
-.teach { max-width: 400px; }
-.teach h3 { margin-bottom: var(--space-3); }
-.teach p { color: var(--text-secondary); font-size: var(--text-sm); line-height: var(--leading-loose); margin-bottom: var(--space-4); white-space: pre-line; }
+.teach { max-width: 420px; padding: var(--space-6); }
+.teach h3 { margin-bottom: var(--space-4); font-size: var(--text-lg); }
+.teach p { color: var(--text-secondary); font-size: var(--text-sm); line-height: var(--leading-loose); margin-bottom: var(--space-5); white-space: pre-line; }
 </style>
