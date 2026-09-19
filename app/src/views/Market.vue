@@ -47,6 +47,7 @@ function sparkline(id) {
 const sparkColor = (id) => (periodReturn(id, 120) >= 0 ? 'var(--positive)' : 'var(--negative)')
 
 const holdingOf = (id) => portfolio.holdings[id]
+const pendingBuyOf = (id) => portfolio.pendingTrades.find((t) => t.type === 'buy' && t.assetId === id)
 </script>
 
 <template>
@@ -68,6 +69,7 @@ const holdingOf = (id) => portfolio.holdings[id]
           <span class="asset-name">{{ a.name }}</span>
           <span class="risk">{{ a.risk }}</span>
           <span v-if="holdingOf(a.id)" class="held">持有中</span>
+          <span v-else-if="pendingBuyOf(a.id)" class="held pending-held">待确认</span>
         </div>
         <p class="asset-intro">{{ a.intro }}</p>
         <div class="asset-data">
@@ -115,6 +117,7 @@ h1 { font-size: var(--text-3xl); font-weight: var(--font-bold); letter-spacing: 
 .asset-name { font-size: var(--text-lg); font-weight: var(--font-bold); color: var(--text-primary); }
 .risk { font-size: var(--text-xs); background: var(--bg-subtle); color: var(--text-secondary); padding: 3px 8px; border-radius: var(--radius-sm); font-weight: var(--font-medium); }
 .held { font-size: var(--text-xs); color: var(--brand-accent); border: 1px solid var(--brand-accent); padding: 3px 8px; border-radius: var(--radius-sm); }
+.pending-held { color: var(--warning); border-color: var(--warning); }
 .asset-intro { color: var(--text-secondary); font-size: var(--text-sm); line-height: var(--leading-normal); margin: 0; }
 .asset-data { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-top: var(--space-2); padding-top: var(--space-3); border-top: 1px dashed var(--border-default); }
 .spark { width: 120px; height: 32px; flex-shrink: 0; }

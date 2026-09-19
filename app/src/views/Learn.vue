@@ -8,7 +8,11 @@ const portfolio = usePortfolioStore()
 const LS_KEY = 'sim-learn-v1'
 const loadLS = () => { try { return JSON.parse(localStorage.getItem(LS_KEY)) } catch { return null } }
 const saved = loadLS() ?? { selfTest: null, quizDone: false, done: {} }
-const persistLS = () => localStorage.setItem(LS_KEY, JSON.stringify({ selfTest: selfTestDone.value ? selfTest.value : null, quizDone: quizDone.value, quizAnswers: quizAnswers.value, done: {} }))
+const persistLS = () => localStorage.setItem(LS_KEY, JSON.stringify({
+  selfTest: selfTestDone.value ? selfTest.value : null,
+  quizDone: quizDone.value,
+  quizAnswers: quizAnswers.value,
+}))
 
 // ---- 阶段0 自测 ----
 const selfTest = ref(saved.selfTest ?? { savings: null, monthly: null, horizon: null })
@@ -64,6 +68,29 @@ const honestyGap = computed(() => {
 })
 const submitQuiz = () => { quizDone.value = true; persistLS() }
 
+// ---- 剧本完成状态（从Scenario.vue的localStorage读取）----
+const SCENARIO_STATE_KEY = 'sim-scenario-state'
+const scenarioState = computed(() => {
+  try { return JSON.parse(localStorage.getItem(SCENARIO_STATE_KEY)) ?? { done: {} } } catch { return { done: {} } }
+})
+
+// ---- 阶段完成判定逻辑 ----
+const stage1Done = computed(() => {
+  // 阶段1完成条件：持有货币基金 + 至少推进过1天（看到收益）
+  const hasMoneyFund = portfolio.holdings['fund-cash-01']?.shares > 0
+  return hasMoneyFund && portfolio.day >= 1
+})
+
+const stage2Done = computed(() => {
+  // 阶段2完成条件：持有纯债基金 + 至少推进过1天
+  const hasBondFund = portfolio.holdings['fund-bond-01']?.shares > 0 || portfolio.holdings['fund-bond-02']?.shares > 0
+  return hasBondFund && portfolio.day >= 1
+})
+
+const stage4Done = computed(() => !!scenarioState.value.done['A'])
+const stage5Done = computed(() => !!scenarioState.value.done['B'] && !!scenarioState.value.done['C'] && !!scenarioState.value.done['D'])
+const stage6Done = computed(() => !!scenarioState.value.done['E'])
+
 // ---- 阶段定义 ----
 const stages = computed(() => {
   const s0Done = selfTestDone.value
@@ -76,12 +103,14 @@ const stages = computed(() => {
       tasks: ['完成三道财务自测', '看懂三张铁律卡'],
     },
     {
-      id: 1, name: '搞定活钱', status: s0Done ? 'current' : 'locked',
+      id: 1, name: '搞定活钱',
+      status: stage1Done.value ? 'done' : (s0Done ? 'current' : 'locked'),
       desc: '第一笔投资：买入货币基金，理解活钱管理',
       tasks: ['买入1000元稳健货币A', '次日查看收益到账', '回答小测：生活费放哪'],
     },
     {
-      id: 2, name: '认识波动', status: s0Done ? 'current' : 'locked',
+      id: 2, name: '认识波动',
+      status: stage2Done.value ? 'done' : (s0Done ? 'current' : 'locked'),
       desc: '买入纯债基金，亲历第一次账面浮亏与修复',
       tasks: ['买入2000元纯债一号', '经历回撤日提示', '持有到回撤修复'],
     },
@@ -91,17 +120,20 @@ const stages = computed(() => {
       tasks: ['完成10道测评题', '查看推荐配置', '观察言行一致性彩蛋'],
     },
     {
-      id: 4, name: '第一次组合', status: s0Done ? 'current' : 'locked',
+      id: 4, name: '第一次组合',
+      status: stage4Done.value ? 'done' : (s3Done ? 'current' : 'locked'),
       desc: '按画像配置组合，快进3个月，完成第一次复盘',
       tasks: ['买入推荐组合或自选比例', '通关剧本A「牛市的味道」', '完成剧本复盘'],
     },
     {
-      id: 5, name: '直面波动', status: s0Done ? 'current' : 'locked',
+      id: 5, name: '直面波动',
+      status: stage5Done.value ? 'done' : (stage4Done.value ? 'current' : 'locked'),
       desc: '股灾、横盘、疫情三连剧本，验证真实的风险承受力',
       tasks: ['通关剧本B/C/D', '三份画像验证报告', '必要时主动调低画像'],
     },
     {
-      id: 6, name: '进入真实市场', status: s0Done ? 'current' : 'locked',
+      id: 6, name: '进入真实市场',
+      status: stage6Done.value ? 'done' : (stage5Done.value ? 'current' : 'locked'),
       desc: '开户指南、渠道选择、第一笔真实买入清单',
       tasks: ['通关剧本E「毕业大考」', '四项行为标准达成', '领取毕业证书'],
     },

@@ -28,7 +28,24 @@ const tradeRows = computed(() =>
     </div>
 
     <div v-if="tab === 'holding'">
-      <p v-if="!detail.length" class="empty">还没有持仓。去市场页看看，从风险低的开始。</p>
+      <!-- 待确认持仓 -->
+      <div v-if="portfolio.pendingTrades.length" class="pending-section">
+        <p class="section-label">⏳ 待确认（T+1后到账）</p>
+        <div v-for="t in portfolio.pendingTrades.filter(t => t.type === 'buy')" :key="t.id" class="card holding-row pending-row">
+          <span class="cat-bar" :style="{ background: `var(${byId(t.assetId)?.colorVar || '--brand-accent'})` }"></span>
+          <div class="main">
+            <span class="name">{{ byId(t.assetId)?.name }} <span class="risk pending-tag">待确认</span></span>
+            <span class="sub">第 {{ t.day }} 日下单 · 预计第 {{ t.confirmDay }} 日确认 · 净值 {{ fmt(t.navAtConfirm, 4) }}</span>
+          </div>
+          <div class="nums">
+            <span class="num value">¥{{ fmt(t.amount) }}</span>
+            <span class="num" style="color: var(--warning)">确认中</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 已确认持仓 -->
+      <p v-if="!detail.length && !portfolio.pendingTrades.filter(t => t.type === 'buy').length" class="empty">还没有持仓。去市场页看看，从风险低的开始。</p>
       <div v-for="h in detail" :key="h.id" class="card holding-row">
         <span class="cat-bar" :style="{ background: `var(${h.asset.colorVar})` }"></span>
         <div class="main">
@@ -83,4 +100,8 @@ h1 { font-size: var(--text-3xl); font-weight: var(--font-bold); margin-bottom: v
 .status { font-size: var(--text-xs); padding: 3px 8px; border-radius: var(--radius-sm); }
 .status.pending { background: var(--warning-bg); color: var(--warning); }
 .status.confirmed { background: var(--positive-bg); color: var(--positive); }
+.pending-section { margin-bottom: var(--space-4); }
+.section-label { font-size: var(--text-sm); color: var(--text-tertiary); margin-bottom: var(--space-2); font-weight: var(--font-medium); }
+.pending-row { border-left: 3px solid var(--warning); }
+.pending-tag { background: var(--warning-bg); color: var(--warning); }
 </style>

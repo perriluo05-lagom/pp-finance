@@ -99,14 +99,22 @@ const invested = computed(() => portfolio.holdingsDetail.reduce((s, h) => s + h.
 const cashRatio = computed(() => portfolio.totalValue > 0 ? portfolio.cash / portfolio.totalValue : 1)
 const cashRatioPct = computed(() => (cashRatio.value * 100).toFixed(1))
 
-// 六阶段进度（学习页状态）
-const learnState = ref(JSON.parse(localStorage.getItem('sim-learn-v1') ?? 'null') || { selfTest: null, quizDone: false, done: {} })
+// 六阶段进度（与Learn.vue逻辑一致）
+const SCENARIO_STATE_KEY = 'sim-scenario-state'
+const scenarioState = computed(() => {
+  try { return JSON.parse(localStorage.getItem(SCENARIO_STATE_KEY)) ?? { done: {} } } catch { return { done: {} } }
+})
+const learnState = ref(JSON.parse(localStorage.getItem('sim-learn-v1') ?? 'null') || { selfTest: null, quizDone: false })
 const learnProgress = computed(() => {
-  const d = learnState.value.done ?? {}
   let n = 0
-  if (learnState.value.selfTest) n++
-  if (learnState.value.quizDone) n++
-  for (const k of ['s1', 's2', 's4', 's5', 's6']) if (d[k]) n++
+  if (learnState.value.selfTest) n++ // 阶段0
+  if (portfolio.holdings['fund-cash-01']?.shares > 0 && portfolio.day >= 1) n++ // 阶段1
+  const hasBond = portfolio.holdings['fund-bond-01']?.shares > 0 || portfolio.holdings['fund-bond-02']?.shares > 0
+  if (hasBond && portfolio.day >= 1) n++ // 阶段2
+  if (learnState.value.quizDone) n++ // 阶段3
+  if (scenarioState.value.done['A']) n++ // 阶段4
+  if (scenarioState.value.done['B'] && scenarioState.value.done['C'] && scenarioState.value.done['D']) n++ // 阶段5
+  if (scenarioState.value.done['E']) n++ // 阶段6
   return n
 })
 

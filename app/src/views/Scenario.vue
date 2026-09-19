@@ -21,6 +21,9 @@ const currentEvent = computed(() => {
   return active.value.events.find((e) => e.day === activeDay.value) ?? null
 })
 const showEvent = ref(true) // 事件弹窗开关（用户点掉后不再弹同一天）
+const GUIDE_KEY = 'sim-guide-seen'
+const showGuide = ref(!localStorage.getItem(GUIDE_KEY))
+const dismissGuide = () => { showGuide.value = false; localStorage.setItem(GUIDE_KEY, '1') }
 
 // 开始剧本
 const start = (id) => {
@@ -206,11 +209,54 @@ const periodPnl = computed(() => {
 
 <template>
   <div>
+    <!-- 使用指导（首次进入时显示） -->
+    <div v-if="showGuide" class="guide-overlay" @click.self="showGuide = false">
+      <div class="guide-card card">
+        <h3>🎮 模拟器使用指南</h3>
+        <div class="guide-steps">
+          <div class="guide-step">
+            <span class="step-num">1</span>
+            <div>
+              <b>选择剧本</b>
+              <p>从下方卡片中选择一个历史行情剧本，点击"进入"开始模拟</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <span class="step-num">2</span>
+            <div>
+              <b>去市场买入资产</b>
+              <p>进入剧本后，先切换到「市场」页面买入基金。买入后资金会减少，但份额需要T+1确认</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <span class="step-num">3</span>
+            <div>
+              <b>推进交易日</b>
+              <p>回到剧本页，点击"推进一天"让时间前进。T+1后你的持仓会确认，净值会随行情波动</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <span class="step-num">4</span>
+            <div>
+              <b>查看持仓 & 复盘</b>
+              <p>在「持仓」页查看你的基金表现。剧本结束后会生成复盘报告，对比你的操作和"躺平"策略</p>
+            </div>
+          </div>
+        </div>
+        <div class="guide-tips">
+          <p>💡 <b>关键规则：</b>基金交易T+1确认（QDII T+2），买入当天看不到份额，推进一天后才会到账</p>
+          <p>💡 <b>学习路径：</b>建议按「学习」页的阶段顺序推进，从货币基金开始体验</p>
+        </div>
+        <button class="cta" @click="dismissGuide">开始体验</button>
+      </div>
+    </div>
+
     <!-- 无剧本进行中：选剧本 -->
     <div v-if="!active">
       <div class="page-head">
         <h1>剧本</h1>
         <p class="page-sub">真实历史的模拟重演 · 每个剧本都是一次完整的行情体验</p>
+        <button class="guide-btn" @click="showGuide = true">📖 使用指南</button>
       </div>
       <div class="sc-list">
         <button v-for="sc in SCENARIOS" :key="sc.id" class="card sc-card" :class="{ done: state.done[sc.id] }" @click="start(sc.id)">
@@ -341,6 +387,19 @@ const periodPnl = computed(() => {
 </template>
 
 <style scoped>
+.guide-overlay { position: fixed; inset: 0; background: rgba(43, 34, 51, 0.50); display: flex; align-items: center; justify-content: center; z-index: 200; padding: var(--space-4); }
+.guide-card { width: 100%; max-width: 560px; padding: var(--space-8); }
+.guide-card h3 { font-size: var(--text-xl); font-weight: var(--font-bold); margin-bottom: var(--space-5); }
+.guide-steps { display: flex; flex-direction: column; gap: var(--space-4); margin-bottom: var(--space-5); }
+.guide-step { display: flex; gap: var(--space-3); align-items: flex-start; }
+.step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--brand-accent); color: var(--text-on-color); font-weight: var(--font-bold); font-size: var(--text-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.guide-step div b { font-size: var(--text-base); font-weight: var(--font-semibold); display: block; margin-bottom: 2px; }
+.guide-step div p { font-size: var(--text-sm); color: var(--text-secondary); margin: 0; line-height: var(--leading-normal); }
+.guide-tips { background: var(--bg-subtle); border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); }
+.guide-tips p { font-size: var(--text-sm); color: var(--text-secondary); margin: 0; line-height: var(--leading-relaxed); }
+.guide-btn { border: 1px solid var(--border-default); background: none; border-radius: var(--radius-md); padding: var(--space-2) var(--space-4); cursor: pointer; color: var(--text-secondary); font-size: var(--text-sm); margin-left: auto; }
+.guide-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
 .page-head { display: flex; align-items: baseline; gap: var(--space-4); margin-bottom: var(--space-6); }
 h1 { font-size: var(--text-3xl); font-weight: var(--font-bold); letter-spacing: .02em; }
 .page-sub { color: var(--text-tertiary); font-size: var(--text-sm); }
