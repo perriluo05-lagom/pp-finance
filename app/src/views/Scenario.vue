@@ -526,8 +526,9 @@ h1 { font-size: var(--text-3xl); font-weight: var(--font-bold); letter-spacing: 
 .stat-sub { font-size: var(--text-sm); }
 .mini-h { display: flex; justify-content: space-between; font-size: var(--text-sm); padding: var(--space-1) 0; }
 .empty-hint .buy-link { color: var(--brand-accent); text-decoration: none; font-size: var(--text-sm); font-weight: var(--font-medium); }
-.modal-mask { position: fixed; inset: 0; background: rgba(43, 34, 51, 0.40); display: flex; align-items: center; justify-content: center; z-index: 100; padding: var(--space-4); }
+.modal-mask { position: fixed; inset: 0; background: rgba(43, 34, 51, 0.40); display: flex; align-items: center; justify-content: center; z-index: 100; padding: var(--space-4); overflow-y: auto; }
 .modal { width: 100%; max-width: 480px; padding: var(--space-8); }
+.review { max-height: 90vh; overflow-y: auto; }
 .event .ev-type { font-size: var(--text-sm); color: var(--text-tertiary); display: block; margin-bottom: var(--space-3); }
 .event.shock { border-color: var(--negative); }
 .event.teach { border-color: var(--info); }
