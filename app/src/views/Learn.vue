@@ -66,7 +66,7 @@ const honestyGap = computed(() => {
   const a6 = quizAnswers.value[5], a7 = quizAnswers.value[6]
   return a6 !== null && a7 !== null && a6 - a7 >= 2
 })
-const submitQuiz = () => { quizDone.value = true; persistLS() }
+const submitQuiz = () => { quizDone.value = true; showQuiz.value = false; persistLS() }
 
 // ---- 剧本完成状态（从Scenario.vue的localStorage读取）----
 const SCENARIO_STATE_KEY = 'sim-scenario-state'

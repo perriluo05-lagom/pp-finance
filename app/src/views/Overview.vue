@@ -1,12 +1,25 @@
 <script setup>
 import { computed, ref, onMounted, watch, nextTick } from 'vue'
 import { usePortfolioStore } from '../stores/portfolio'
-import { generateHistory } from '../engine/market.js'
+import { generateHistory, generateDailyReturns, makeRng } from '../engine/market.js'
 import * as echarts from 'echarts'
 
 const portfolio = usePortfolioStore()
 const chartEl = ref(null)
 let chart = null
+
+// ---- 自由模式：手动推进交易日 ----
+// 用固定seed保证同一用户每次推进的行情一致（但不同用户不同）
+const FREE_RNG_SEED = 20260917
+const advanceOneDay = () => {
+  const rng = makeRng(FREE_RNG_SEED + portfolio.day + 1)
+  const returns = generateDailyReturns(rng)
+  portfolio.advanceDay(returns)
+}
+const advanceNDays = (n) => {
+  for (let i = 0; i < n; i++) advanceOneDay()
+}
+const hasPendingTrades = computed(() => portfolio.pendingTrades.length > 0)
 
 const fmt = (v) => v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const pct = (v) => (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%'
@@ -184,6 +197,22 @@ const topHoldings = computed(() =>
       </div>
     </div>
 
+    <!-- 自由模式：手动推进交易日 -->
+    <div class="free-mode card">
+      <div class="fm-head">
+        <b>📅 自由模式 · 第 {{ portfolio.day }} 个交易日</b>
+        <span class="fm-hint">不在剧本中？手动推进日期，让资产开始运作</span>
+      </div>
+      <div class="fm-actions">
+        <button class="fm-btn" @click="advanceOneDay">⏩ 推进1天</button>
+        <button class="fm-btn" @click="advanceNDays(5)">⏩ 推进5天</button>
+        <button class="fm-btn" @click="advanceNDays(20)">⏩ 推进20天</button>
+      </div>
+      <div v-if="hasPendingTrades" class="fm-pending">
+        ⏳ 你有 {{ portfolio.pendingTrades.length }} 笔待确认交易，推进日期后份额将到账
+      </div>
+    </div>
+
     <div class="learn-bar card">
       <div class="lb-left">
         <b>学习进度</b>
@@ -254,6 +283,16 @@ const topHoldings = computed(() =>
 @media (max-width: 560px) { .wl-row { grid-template-columns: 1fr; } }
 
 .dash { display: flex; flex-direction: column; gap: var(--space-6); }
+.free-mode { padding: var(--space-5) var(--space-6); }
+.fm-head { display: flex; align-items: baseline; gap: var(--space-4); margin-bottom: var(--space-4); }
+.fm-head b { font-size: var(--text-base); font-weight: var(--font-semibold); }
+.fm-hint { font-size: var(--text-xs); color: var(--text-tertiary); }
+.fm-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.fm-btn { background: var(--bg-subtle); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: var(--space-3) var(--space-5); cursor: pointer; font-size: var(--text-sm); font-weight: var(--font-medium); color: var(--text-primary); transition: all .12s; }
+.fm-btn:hover:not(:disabled) { background: var(--bg-hover); border-color: var(--brand-accent); }
+.fm-btn:disabled { opacity: .5; cursor: not-allowed; }
+.fm-btn-sub { font-size: var(--text-xs); color: var(--warning); font-weight: var(--font-regular); }
+.fm-pending { margin-top: var(--space-3); font-size: var(--text-sm); color: var(--warning); background: var(--warning-bg); padding: var(--space-2) var(--space-4); border-radius: var(--radius-sm); }
 .learn-bar { display: flex; align-items: center; gap: var(--space-6); padding: var(--space-5) var(--space-6); }
 .lb-left { flex: 1; display: flex; align-items: center; gap: var(--space-4); }
 .lb-left b { font-size: var(--text-base); white-space: nowrap; }
