@@ -1,24 +1,32 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { ASSETS, CATEGORY_TABS } from '../data/assets'
 import { generateHistory } from '../engine/market.js'
 import { usePortfolioStore } from '../stores/portfolio'
 
 const portfolio = usePortfolioStore()
 const tab = ref('all')
-const chartReady = ref(false)
-let navHistory = null
 
-onMounted(() => {
-  // 固定seed生成"历史走势"——同一会话内所有用户看到同一段历史
-  navHistory = generateHistory(20260917, 120)
-  chartReady.value = true
+// 固定seed生成"参考历史走势"（用户未推进时作为占位显示）
+const REF_SEED = 20260917
+const refHistory = generateHistory(REF_SEED, 120)
+
+// 合并历史：参考历史 + 用户实际走出的净值（与 AssetDetail.vue 逻辑一致）
+const fullNav = computed(() => {
+  const out = {}
+  for (const a of ASSETS) {
+    const ref = refHistory[a.id]
+    const live = portfolio.navHistory[a.id] ?? []
+    // 去重拼接：参考历史最后一点 ≈ live 起点
+    out[a.id] = live.length > 0 ? [...ref.slice(0, -1), ...live] : ref
+  }
+  return out
 })
 
-// 各资产近1月/近1年涨幅（从历史序列算）
+// 各资产近1月/近1年涨幅（从合并历史序列算）
 function periodReturn(id, days) {
-  if (!navHistory) return 0
-  const s = navHistory[id]
+  const s = fullNav.value[id]
+  if (!s || s.length < 2) return 0
   const prev = s[Math.max(0, s.length - 1 - days)]
   return s[s.length - 1] / prev - 1
 }
@@ -32,13 +40,14 @@ const shown = computed(() =>
 const fmt = (v) => Number(v).toFixed(2)
 const pct = (v) => (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%'
 
-// 迷你走势图：120日净值 → SVG path（80x28）
+// 迷你走势图：最近120日净值 → SVG path（80x28）
 function sparkline(id) {
-  if (!navHistory) return ''
-  const s = navHistory[id].slice(-120)
-  const min = Math.min(...s), max = Math.max(...s), span = max - min || 1
-  const pts = s.map((v, i) => {
-    const x = (i / (s.length - 1)) * 80
+  const s = fullNav.value[id]
+  if (!s || s.length < 2) return ''
+  const slice = s.slice(-120)
+  const min = Math.min(...slice), max = Math.max(...slice), span = max - min || 1
+  const pts = slice.map((v, i) => {
+    const x = (i / (slice.length - 1)) * 80
     const y = 26 - ((v - min) / span) * 24
     return `${x.toFixed(1)},${y.toFixed(1)}`
   })
@@ -96,7 +105,7 @@ const pendingBuyOf = (id) => portfolio.pendingTrades.find((t) => t.type === 'buy
         </div>
         <p class="asset-intro">{{ a.intro }}</p>
         <div class="asset-data">
-          <svg v-if="chartReady" class="spark" :viewBox="'0 0 80 28'" preserveAspectRatio="none">
+          <svg class="spark" :viewBox="'0 0 80 28'" preserveAspectRatio="none">
             <path :d="sparkline(a.id)" fill="none" :stroke="sparkColor(a.id)" stroke-width="1.5" />
           </svg>
           <div class="rets">

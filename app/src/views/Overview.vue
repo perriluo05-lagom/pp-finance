@@ -9,10 +9,18 @@ const chartEl = ref(null)
 let chart = null
 
 // ---- 自由模式：手动推进交易日 ----
-// 用固定seed保证同一用户每次推进的行情一致（但不同用户不同）
-const FREE_RNG_SEED = 20260917
+// 用用户专属seed保证同一用户每次推进的行情一致，不同用户不同
+const USER_SEED_KEY = 'sim-user-seed'
+function getUserSeed() {
+  let seed = localStorage.getItem(USER_SEED_KEY)
+  if (!seed) {
+    seed = String(Date.now() % 1000000000)
+    localStorage.setItem(USER_SEED_KEY, seed)
+  }
+  return Number(seed)
+}
 const advanceOneDay = () => {
-  const rng = makeRng(FREE_RNG_SEED + portfolio.day + 1)
+  const rng = makeRng(getUserSeed() + portfolio.day + 1)
   const returns = generateDailyReturns(rng)
   portfolio.advanceDay(returns)
 }
