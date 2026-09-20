@@ -25,6 +25,12 @@ const GUIDE_KEY = 'sim-guide-seen'
 const showGuide = ref(!localStorage.getItem(GUIDE_KEY))
 const dismissGuide = () => { showGuide.value = false; localStorage.setItem(GUIDE_KEY, '1') }
 
+// 关闭事件弹窗，如果之前是自动播放则恢复
+const dismissEvent = () => {
+  showEvent.value = false
+  resumeAuto()
+}
+
 // 开始剧本
 const start = (id) => {
   state.value.activeId = id
@@ -53,6 +59,12 @@ const dayReturns = computed(() => {
 const advanceOne = () => {
   if (activeDay.value >= active.value.days) return
   state.value.day += 1
+  // 检查新的一天是否有事件，如果有则暂停自动播放
+  const nextEvent = active.value.events.find((e) => e.day === activeDay.value)
+  if (nextEvent && autoPlay.value) {
+    clearInterval(autoPlay.value)
+    autoPlay.value = null
+  }
   showEvent.value = true
   portfolio.advanceDay(dayReturns.value)
   // 记录每天的总资产（用于复盘对比图）
@@ -69,6 +81,15 @@ const toggleAuto = () => {
     if (activeDay.value >= active.value.days) { toggleAuto(); return }
     advanceOne()
   }, 500)
+}
+// 恢复自动播放（用户关闭事件弹窗后调用）
+const resumeAuto = () => {
+  if (!autoPlay.value && active.value && activeDay.value < active.value.days) {
+    autoPlay.value = setInterval(() => {
+      if (activeDay.value >= active.value.days) { toggleAuto(); return }
+      advanceOne()
+    }, 500)
+  }
 }
 
 // 结束/复盘
@@ -373,11 +394,11 @@ const periodPnl = computed(() => {
       </div>
 
       <!-- 事件弹窗 -->
-      <div v-if="currentEvent && showEvent && !finished" class="modal-mask" @click.self="showEvent = false">
+      <div v-if="currentEvent && showEvent && !finished" class="modal-mask" @click.self="dismissEvent">
         <div class="modal card event" :class="currentEvent.type">
           <span class="ev-type">{{ { news: '📰 市场消息', shock: '⚡ 剧烈波动', teach: '🎓 教学时刻', tempt: '😈 诱惑测试' }[currentEvent.type] }}</span>
           <p class="ev-text">{{ currentEvent.text }}</p>
-          <button class="cta" @click="showEvent = false">知道了，继续</button>
+          <button class="cta" @click="dismissEvent">知道了，继续</button>
         </div>
       </div>
 
