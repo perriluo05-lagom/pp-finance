@@ -83,19 +83,55 @@ const finish = () => {
 // 剧情走势图（剧本设计线）
 const chartEl = ref(null)
 let chart = null
-onMounted(renderChart)
-watch([active, activeDay], () => nextTick(renderChart))
+
+// 复盘对比图（你的操作 vs 持有不动）
+const reviewChartEl = ref(null)
+let reviewChart = null
+
+// 组件挂载时，如果有活跃的剧本，立即渲染走势图
+onMounted(() => {
+  if (active.value) {
+    nextTick(renderChart)
+  }
+})
+
+// 监听剧本激活和天数变化，重新渲染走势图
+watch([active, activeDay], () => {
+  if (active.value) {
+    nextTick(renderChart)
+  }
+})
+
+// 监听复盘图表 DOM 元素可用性，自动渲染
+watch(reviewChartEl, (el) => {
+  if (el && finished.value) {
+    renderReviewChart()
+  }
+})
 
 // 监听剧本完成状态，自动渲染复盘对比图
 watch(finished, (isFinished) => {
   if (isFinished) {
-    nextTick(() => {
-      setTimeout(renderReviewChart, 100) // 延迟确保DOM完全渲染
-    })
+    // 重置 reviewChart 实例，确保绑定到新的 DOM 元素
+    reviewChart = null
+    // 使用 setTimeout 确保 v-if 模态框 DOM 完全渲染
+    setTimeout(() => {
+      renderReviewChart()
+    }, 150)
   }
 })
 function renderChart() {
   if (!chartEl.value || !series.value) return
+  // 如果 chart 已存在但 DOM 元素变了（组件重新挂载），销毁旧实例
+  try {
+    const dom = chart.getDom()
+    if (dom !== chartEl.value) {
+      chart.dispose()
+      chart = null
+    }
+  } catch {
+    chart = null
+  }
   chart ??= echarts.init(chartEl.value)
   const cum = series.value.cum['fund-index-01']
   const data = cum.slice(0, Math.max(1, activeDay.value)).map((v) => +(v * 100).toFixed(2))
@@ -111,11 +147,18 @@ function renderChart() {
   })
 }
 
-// 复盘对比图（你的操作 vs 持有不动）
-const reviewChartEl = ref(null)
-let reviewChart = null
 const renderReviewChart = () => {
   if (!reviewChartEl.value || !active.value) return
+  // 如果 reviewChart 已存在但 DOM 元素变了，销毁旧实例
+  try {
+    const dom = reviewChart.getDom()
+    if (dom !== reviewChartEl.value) {
+      reviewChart.dispose()
+      reviewChart = null
+    }
+  } catch {
+    reviewChart = null
+  }
   reviewChart ??= echarts.init(reviewChartEl.value)
   
   const history = state.value.valueHistory[active.value.id] || []
