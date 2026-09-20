@@ -57,6 +57,29 @@ const pendingBuyOf = (id) => portfolio.pendingTrades.find((t) => t.type === 'buy
       <p class="page-sub">全部为模拟资产 · 规则与费率参照中国公募基金市场</p>
     </div>
 
+    <!-- 市场解读教学卡片 -->
+    <div class="card market-insight">
+      <h3>📊 如何看懂市场数据</h3>
+      <div class="insight-grid">
+        <div class="insight-item">
+          <b> 走势图怎么看</b>
+          <p>迷你走势图显示近120日净值变化。<b>持续向上</b>说明趋势向好，<b>剧烈波动</b>说明风险较高，<b>横盘不动</b>说明市场在等待方向。不要只看涨跌，要看趋势的稳定性。</p>
+        </div>
+        <div class="insight-item">
+          <b>📉 近1月 vs 近1年</b>
+          <p>近1月涨幅反映<b>短期情绪</b>，近1年涨幅反映<b>长期趋势</b>。如果近1月大涨但近1年亏损，说明刚经历暴跌后的反弹——别被短期涨幅迷惑。反之，近1月小跌但近1年大涨，可能是健康的回调。</p>
+        </div>
+        <div class="insight-item">
+          <b>⚖️ 费率的影响</b>
+          <p>申购费看似只有0.12%，但频繁买卖会累积成巨大成本。假设每月买卖一次，一年下来摩擦成本可能吃掉1-2%的收益。<b>长期持有是降低费率影响的最佳方式。</b></p>
+        </div>
+        <div class="insight-item">
+          <b>🎯 小白选基三原则</b>
+          <p>① <b>先选类别再选产品</b>：先决定买货币/债券/股票，再在同类中比较；② <b>看规模</b>：规模太小有清盘风险，太大可能灵活性差；③ <b>看成立年限</b>：至少成立1年以上，有完整牛熊周期数据。</p>
+        </div>
+      </div>
+    </div>
+
     <div class="tabs">
       <button v-for="t in CATEGORY_TABS" :key="t.key"
         :class="{ active: tab === t.key }" @click="tab = t.key">{{ t.label }}</button>
@@ -126,4 +149,12 @@ h1 { font-size: var(--text-3xl); font-weight: var(--font-bold); letter-spacing: 
 .ret-label { font-size: var(--text-xs); color: var(--text-tertiary); }
 .ret-group .num { font-size: var(--text-sm); font-weight: var(--font-semibold); }
 .fee { color: var(--text-secondary); }
+
+/* 市场解读教学 */
+.market-insight { margin-bottom: var(--space-6); padding: var(--space-6); }
+.market-insight h3 { font-size: var(--text-lg); font-weight: var(--font-bold); margin-bottom: var(--space-4); }
+.market-insight .insight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-4); }
+.market-insight .insight-item { background: var(--bg-subtle); border-radius: var(--radius-md); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+.market-insight .insight-item b { font-size: var(--text-sm); color: var(--text-primary); }
+.market-insight .insight-item p { font-size: var(--text-xs); color: var(--text-secondary); line-height: var(--leading-relaxed); margin: 0; }
 </style>

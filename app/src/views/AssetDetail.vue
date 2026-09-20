@@ -155,6 +155,29 @@ const advanceDay = () => {
 
     <p class="real-ref">现实中同类产品：{{ asset.realRef }}。本页数据为模拟数据，不构成投资建议。</p>
 
+    <!-- 市场解读教学 -->
+    <div class="card insight">
+      <h3>📖 如何看懂这只基金</h3>
+      <div class="insight-grid">
+        <div class="insight-item">
+          <b>波动率意味着什么</b>
+          <p>年化波动 {{ (asset.volatility * 100).toFixed(0) }}% 意味着：在极端行情下，单日可能涨跌 {{ (asset.dailyLimit[0] * 100).toFixed(1) }}%。如果你无法承受这个波动，就不应该买。</p>
+        </div>
+        <div class="insight-item">
+          <b>与大盘的关联度</b>
+          <p>与沪深300的相关系数 {{ asset.correlation }}。{{ asset.correlation > 0.5 ? '高度联动，大盘涨它大概率涨，大盘跌它也难独善其身。' : asset.correlation < 0 ? '负相关，大盘跌时它可能逆势上涨，是组合中的"稳定器"。' : '低相关，走势相对独立，可以分散风险。' }}</p>
+        </div>
+        <div class="insight-item">
+          <b>历史表现参考</b>
+          <p>参考年化 {{ (asset.retRate * 100).toFixed(1) }}%，但历史不代表未来。注意：高收益必然伴随高波动，宣称"高收益低风险"的都是骗局。</p>
+        </div>
+        <div class="insight-item">
+          <b>适合什么场景</b>
+          <p>{{ asset.category === 'cash' ? '随时要用的钱，放这里比银行卡活期强。' : asset.category === 'bond' ? '1-3年内要用的钱，比货币基金收益高，但要能承受短期小幅亏损。' : asset.category === 'equity' ? '3年以上不用的闲钱，用时间消化波动，长期正收益概率高。' : asset.category === 'industry' ? '看好某个行业的长期发展，但要接受行业政策风险和集中度风险。' : asset.category === 'overseas' ? '分散A股单一市场风险，但确认和到账更慢，汇率也有影响。' : '避险资产，不生息但能在恐慌时保值，适合配置5-10%。' }}</p>
+        </div>
+      </div>
+    </div>
+
     <TradeModal v-if="showTrade" :asset-id="asset.id" @close="showTrade = false"
       @first-buy="(a) => (firstBuyTip = a)" />
     <div v-if="firstBuyTip" class="modal-mask" @click.self="firstBuyTip = null">
@@ -195,6 +218,14 @@ const advanceDay = () => {
 .rules summary { cursor: pointer; font-weight: var(--font-semibold); color: var(--text-primary); padding: var(--space-2) 0; }
 .rules ul { margin: var(--space-3) 0 var(--space-2); padding-left: var(--space-6); display: flex; flex-direction: column; gap: var(--space-2); }
 .real-ref { color: var(--text-tertiary); font-size: var(--text-sm); margin-top: var(--space-8); line-height: var(--leading-normal); }
+
+/* 市场解读教学 */
+.insight { margin-top: var(--space-4); padding: var(--space-6); }
+.insight h3 { font-size: var(--text-lg); font-weight: var(--font-bold); margin-bottom: var(--space-4); }
+.insight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-4); }
+.insight-item { background: var(--bg-subtle); border-radius: var(--radius-md); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+.insight-item b { font-size: var(--text-sm); color: var(--text-primary); }
+.insight-item p { font-size: var(--text-xs); color: var(--text-secondary); line-height: var(--leading-relaxed); margin: 0; }
 .modal-mask { position: fixed; inset: 0; background: rgba(125, 107, 143, 0.25); display: flex; align-items: center; justify-content: center; z-index: 100; padding: var(--space-4); }
 .teach { max-width: 420px; padding: var(--space-6); }
 .teach h3 { margin-bottom: var(--space-4); font-size: var(--text-lg); }

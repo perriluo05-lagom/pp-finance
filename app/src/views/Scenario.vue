@@ -85,6 +85,15 @@ const chartEl = ref(null)
 let chart = null
 onMounted(renderChart)
 watch([active, activeDay], () => nextTick(renderChart))
+
+// 监听剧本完成状态，自动渲染复盘对比图
+watch(finished, (isFinished) => {
+  if (isFinished) {
+    nextTick(() => {
+      setTimeout(renderReviewChart, 100) // 延迟确保DOM完全渲染
+    })
+  }
+})
 function renderChart() {
   if (!chartEl.value || !series.value) return
   chart ??= echarts.init(chartEl.value)
@@ -350,6 +359,25 @@ const periodPnl = computed(() => {
           <ul class="rv-list">
             <li v-for="f in active.review.focus" :key="f">{{ f }}</li>
           </ul>
+
+          <!-- 教学解读 -->
+          <div v-if="active.review.teaching" class="rv-teaching">
+            <div class="teach-section">
+              <h4>📊 行情解读</h4>
+              <p>{{ active.review.teaching.marketContext }}</p>
+            </div>
+            <div class="teach-section">
+              <h4>🔍 关键信号</h4>
+              <ul>
+                <li v-for="(signal, i) in active.review.teaching.keySignals" :key="i">{{ signal }}</li>
+              </ul>
+            </div>
+            <div class="teach-section">
+              <h4>💡 理性策略</h4>
+              <p>{{ active.review.teaching.strategyTips }}</p>
+            </div>
+          </div>
+
           <div class="rv-btns">
             <button class="cta ghost" @click="quit">重玩这个剧本</button>
             <button class="cta" @click="finish">完成，返回剧本列表</button>
@@ -451,6 +479,14 @@ h1 { font-size: var(--text-3xl); font-weight: var(--font-bold); letter-spacing: 
 .rv-list { margin: 0 0 var(--space-6); padding-left: var(--space-6); color: var(--text-secondary); font-size: var(--text-sm); display: flex; flex-direction: column; gap: var(--space-1); }
 .rv-btns { display: flex; gap: var(--space-3); }
 .rv-btns .cta { flex: 1; }
+
+/* 教学解读 */
+.rv-teaching { margin: var(--space-6) 0; padding: var(--space-5); background: var(--bg-subtle); border-radius: var(--radius-md); border-left: 3px solid var(--brand-accent); }
+.teach-section { margin-bottom: var(--space-4); }
+.teach-section:last-child { margin-bottom: 0; }
+.teach-section h4 { font-size: var(--text-sm); font-weight: var(--font-bold); color: var(--text-primary); margin-bottom: var(--space-2); }
+.teach-section p { font-size: var(--text-sm); color: var(--text-secondary); line-height: var(--leading-relaxed); margin: 0; }
+.teach-section ul { margin: 0; padding-left: var(--space-5); color: var(--text-secondary); font-size: var(--text-sm); display: flex; flex-direction: column; gap: var(--space-1); }
 
 /* 复盘对比图 */
 .rv-chart-section { margin: var(--space-6) 0; }
